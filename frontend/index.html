@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI-Powered Voice-Guided Hospital Finder with Real-Time GPS Navigation">
+    <title>AI Hospital Finder - Voice Guided Navigation</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="pulse-loader"></div>
+            <p class="loading-text">Loading Hospital Finder...</p>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-hospital-symbol"></i>
+                    <h1>AI Hospital Finder</h1>
+                </div>
+                
+                <div class="header-actions">
+                    <!-- Language Selector -->
+                    <div class="language-selector">
+                        <button class="language-btn active" data-lang="en" title="English">
+                            <span class="flag-icon">🇬🇧</span>
+                            <span class="lang-text">EN</span>
+                        </button>
+                        <button class="language-btn" data-lang="hi" title="Hindi">
+                            <span class="flag-icon">🇮🇳</span>
+                            <span class="lang-text">हि</span>
+                        </button>
+                        <button class="language-btn" data-lang="te" title="Telugu">
+                            <span class="flag-icon">🇮🇳</span>
+                            <span class="lang-text">తె</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Emergency Button -->
+                    <button class="emergency-btn" id="emergencyBtn">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span data-translate="emergency">Emergency</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Hero Section -->
+            <section class="hero-section">
+                <div class="hero-content">
+                    <h2 class="hero-title" data-translate="hero_title">
+                        Find the Right Hospital, Fast
+                    </h2>
+                    <p class="hero-subtitle" data-translate="hero_subtitle">
+                        Voice-guided AI assistance in Telugu, Hindi, and English
+                    </p>
+                </div>
+
+                <!-- Voice Input Card -->
+                <div class="voice-card">
+                    <div class="voice-card-header">
+                        <h3 data-translate="describe_symptoms">Describe Your Symptoms</h3>
+                        <div class="current-lang-indicator">
+                            <i class="fas fa-language"></i>
+                            <span id="currentLangText">English</span>
+                        </div>
+                    </div>
+
+                    <!-- Voice Button -->
+                    <div class="voice-input-section">
+                        <button class="voice-btn" id="voiceBtn">
+                            <div class="voice-btn-inner">
+                                <i class="fas fa-microphone"></i>
+                                <span class="voice-ripple"></span>
+                            </div>
+                        </button>
+                        <p class="voice-hint" data-translate="tap_to_speak">Tap to speak or type below</p>
+                    </div>
+
+                    <!-- Text Input Alternative -->
+                    <div class="text-input-section">
+                        <div class="input-group">
+                            <i class="fas fa-comment-medical input-icon"></i>
+                            <textarea 
+                                id="symptomsInput" 
+                                class="symptoms-input" 
+                                rows="3" 
+                                data-translate-placeholder="type_symptoms"
+                                placeholder="Type your symptoms here..."
+                            ></textarea>
+                        </div>
+                        
+                        <button class="analyze-btn" id="analyzeBtn">
+                            <i class="fas fa-search"></i>
+                            <span data-translate="find_hospitals">Find Hospitals</span>
+                        </button>
+                    </div>
+
+                    <!-- Voice Feedback -->
+                    <div class="voice-feedback" id="voiceFeedback" style="display: none;">
+                        <div class="feedback-content">
+                            <div class="listening-animation">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                            <p id="feedbackText">Listening...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analysis Results Section -->
+            <section class="analysis-section" id="analysisSection" style="display: none;">
+                <div class="analysis-card">
+                    <div class="analysis-header">
+                        <i class="fas fa-brain"></i>
+                        <h3 data-translate="ai_analysis">AI Analysis</h3>
+                    </div>
+                    <div class="analysis-content" id="analysisContent">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <!-- Map View -->
+                <div class="map-container">
+                    <div id="map" class="map-view"></div>
+                    <div class="map-controls">
+                        <button class="map-control-btn" id="centerMapBtn" title="Center on my location">
+                            <i class="fas fa-crosshairs"></i>
+                        </button>
+                        <button class="map-control-btn" id="toggleViewBtn" title="Toggle view">
+                            <i class="fas fa-layer-group"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hospitals List -->
+                <div class="hospitals-container">
+                    <div class="hospitals-header">
+                        <h3 data-translate="recommended_hospitals">Recommended Hospitals</h3>
+                        <div class="sort-options">
+                            <select id="sortSelect" class="sort-select">
+                                <option value="score" data-translate="sort_best_match">Best Match</option>
+                                <option value="distance" data-translate="sort_distance">Nearest</option>
+                                <option value="rating" data-translate="sort_rating">Highest Rated</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="hospitals-list" id="hospitalsList">
+                        <!-- Dynamic hospital cards -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- No Results Message -->
+            <div class="no-results" id="noResults" style="display: none;">
+                <i class="fas fa-search-location"></i>
+                <h3 data-translate="no_hospitals_found">No Hospitals Found</h3>
+                <p data-translate="try_different_search">Try adjusting your search or increase the search radius</p>
+                <button class="retry-btn" onclick="location.reload()">
+                    <i class="fas fa-redo"></i>
+                    <span data-translate="try_again">Try Again</span>
+                </button>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <p>&copy; 2025 AI Hospital Finder | Anil Neerukonda Institute of Technology & Sciences</p>
+                </div>
+                <div class="footer-links">
+                    <a href="#" data-translate="about">About</a>
+                    <a href="#" data-translate="help">Help</a>
+                    <a href="#" data-translate="privacy">Privacy</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Hospital Detail Modal -->
+    <div class="modal" id="hospitalModal">
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-body" id="modalBody">
+                <!-- Dynamic hospital details -->
+            </div>
+        </div>
+    </div>
+<!-- Chatbot Widget -->
+<div id="chatbot-container" class="chatbot-hidden">
+    <div class="chatbot-header">
+        <h3>Medical Assistant</h3>
+        <button id="close-chat" class="close-btn">×</button>
+    </div>
+    <div id="chat-messages" class="chat-messages"></div>
+    <div class="chat-input-container">
+        <input type="text" id="chat-input" placeholder="Type your message..." />
+        <button id="send-btn">Send</button>
+    </div>
+</div>
+
+<button id="chat-toggle" class="chat-toggle-btn">
+    💬
+</button>
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="./translations.js"></script>
+    <script src="./voice.js"></script>
+    <script src="./map.js"></script>
+    <script src="./app.js"></script>
+    <script src="./chatbot.js"></script>
+</body>
+</html>
